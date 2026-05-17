@@ -1,12 +1,25 @@
 import { usePrivy } from "@privy-io/react-auth";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { IoClose, IoMenuOutline } from "react-icons/io5";
 import { Link, useNavigate } from "react-router-dom";
 
 const Topbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [visible, setVisible] = useState(true);
+  const lastScrollY = useRef(0);
   const { authenticated, login, logout } = usePrivy();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      setVisible(currentY < lastScrollY.current || currentY < 10);
+      lastScrollY.current = currentY;
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -16,7 +29,7 @@ const Topbar = () => {
     }
   };
   return (
-    <div className="w-full bg-white py-3 text-black">
+    <div className={`w-full bg-white py-3 text-black transition-transform duration-300 ${visible ? "translate-y-0" : "-translate-y-full"}`}>
       <div className="w-[96%] mx-auto flex items-center justify-between">
         <Link to="/" className="block md:hidden">
           <h2 className="text-xl  font-bold">HyperHaus</h2>

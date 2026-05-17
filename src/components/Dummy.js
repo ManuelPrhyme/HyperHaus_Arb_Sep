@@ -13,24 +13,30 @@ export const HowItWork = [
   },
   {
     id: 3,
+    title: "Trade in App",
+    description:
+      "Propose a trade within your guild, let members vote to approve it, and execute directly in the app — no external tools needed.",
+  },
+  {
+    id: 4,
     title: "Earn Rewards",
     description:
       "Earn certain percent of the profit and vest the rest (9-months plan with 3-month wait) designed to reward consistent contributors.",
   },
   {
-    id: 4,
+    id: 5,
     title: "Manage a Team Treasury",
     description:
       "Build a shared treasury with transparent distribution and long-term sustainability via monthly vesting.",
   },
   {
-    id: 5,
+    id: 6,
     title: "Stay Secure with Privy",
     description:
       "Enjoy a smooth, secure onboarding flow powered by privy, keeping your accounts protected.",
   },
   {
-    id: 6,
+    id: 7,
     title: "Track and Compete",
     description:
       "Monitor performance dashboards, climb leaderboards, and compete with other guilds on Hyperliquid",
