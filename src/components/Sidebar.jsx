@@ -17,71 +17,58 @@ const Sidebar = () => {
       console.error("Logout failed:", err);
     }
   };
+
   const sliceAddress = (address) => {
     if (!address) return "";
     return `${address.slice(0, 6)}.....${address.slice(-5)}`;
   };
 
-  console.log("USer", user);
+  const active = "py-2 px-4 rounded-lg font-semibold flex items-center gap-x-3 text-white text-sm";
+  const inactive = "py-2 px-4 rounded-lg font-semibold flex items-center gap-x-3 text-sm transition-colors";
 
-  const active =
-    "bg-white text-black py-1 px-4 md:text-base rounded-md lg:text-lg font-semibold flex items-center gap-x-3";
-  const inactive =
-    "md:text-sm lg:text-base py-1 px-4 rounded-md font-semibold flex items-center gap-x-4 hover:bg-white hover:text-black md:text-base lg:text-lg font-semibold";
   return (
-    <div className="w-full py-1.5 border-r border-r-[#dadada] h-screen">
-      <div className="w-[80%] mx-auto">
+    <div className="w-full h-screen py-4 border-r" style={{ backgroundColor: "var(--bg)", borderColor: "var(--border)" }}>
+      <div className="w-[85%] mx-auto">
         <Link to="/">
-          <h2 className="md:text-2xl lg:text-3xl font-semibold">HyperHaus</h2>
+          <h2 className="text-xl font-bold" style={{ color: "var(--text)" }}>HyperHaus</h2>
         </Link>
 
-        <div className="w-full mt-20 flex flex-col gap-y-4">
-          <NavLink
-            to="/guilds"
-            end
-            className={({ isActive }) => `${isActive ? active : inactive}`}
-          >
-            <AiFillProduct className="w-5 h-5" />
-            Guilds
-          </NavLink>
-          <NavLink
-            to="/guilds/trade"
-            className={({ isActive }) => `${isActive ? active : inactive}`}
-          >
-            <FaChartLine className="w-5 h-5" />
-            Trade
-          </NavLink>
-
-          <NavLink
-            to="/guilds/reward"
-            className={({ isActive }) => `${isActive ? active : inactive}`}
-          >
-            <IoGiftSharp />
-            Reward
-          </NavLink>
-          <NavLink
-            to="/guilds/swap"
-            className={({ isActive }) => `${isActive ? active : inactive}`}
-          >
-            <PiSwapBold />
-            Swap
-          </NavLink>
-          <NavLink
-            to="/guilds/leaderboard"
-            className={({ isActive }) => `${isActive ? active : inactive}`}
-          >
-            <FaAward className="h-6 w-6" />
-            Leaderboard
-          </NavLink>
+        <div className="w-full mt-10 flex flex-col gap-y-1">
+          {[
+            { to: "/guilds", end: true, icon: <AiFillProduct className="w-4 h-4" />, label: "Guilds" },
+            { to: "/guilds/trade", icon: <FaChartLine className="w-4 h-4" />, label: "Trade" },
+            { to: "/guilds/reward", icon: <IoGiftSharp className="w-4 h-4" />, label: "Reward" },
+            { to: "/guilds/swap", icon: <PiSwapBold className="w-4 h-4" />, label: "Swap" },
+            { to: "/guilds/leaderboard", icon: <FaAward className="w-4 h-4" />, label: "Leaderboard" },
+          ].map(({ to, end, icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) => isActive ? active : inactive}
+              style={({ isActive }) => isActive
+                ? { backgroundColor: "var(--accent)", color: "#fff" }
+                : { color: "var(--muted)" }
+              }
+            >
+              {icon}
+              {label}
+            </NavLink>
+          ))}
         </div>
-        <div className="mt-16">
-          <div className="w-full bg-white text-black py-1.5 rounded-3xl shadow flex items-center justify-center">
-            <p className="font-semibold md:text-sm lg:text-base">
-              {sliceAddress(user?.wallet?.address) || "No wallet.."}
-            </p>
+
+        <div className="mt-12">
+          <div
+            className="w-full py-2 rounded-full text-center text-sm font-semibold truncate px-3"
+            style={{ backgroundColor: "var(--bg-elevated)", color: "var(--text)", border: "1px solid var(--border)" }}
+          >
+            {sliceAddress(user?.wallet?.address) || "No wallet.."}
           </div>
           <button
-            className="cursor-pointer mt-6 border border-[#dadada] rounded-3xl w-full py-1.5 hover:bg-white hover:text-black"
+            className="cursor-pointer mt-4 w-full py-2 rounded-full text-sm font-semibold transition-colors"
+            style={{ border: "1px solid var(--border)", color: "var(--muted)" }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = "var(--accent)"; e.currentTarget.style.color = "#fff"; e.currentTarget.style.borderColor = "var(--accent)"; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--muted)"; e.currentTarget.style.borderColor = "var(--border)"; }}
             onClick={handleLogout}
           >
             Log out

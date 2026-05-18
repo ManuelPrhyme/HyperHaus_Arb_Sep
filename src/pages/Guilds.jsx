@@ -63,7 +63,10 @@ const Guilds = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-xl md:text-2xl font-semibold">Guilds</h2>
         <button
-          className="rounded-3xl py-1 text-sm md:text-base px-2.5 md:px-4 cursor-pointer border border-white "
+          className="rounded-full py-1.5 text-sm px-4 cursor-pointer font-semibold transition-all"
+          style={{ backgroundColor: "var(--accent)", color: "#fff" }}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = "var(--accent-hover)"}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = "var(--accent)"}
           onClick={() => setOpen(true)}
         >
           Create Guild
@@ -96,60 +99,46 @@ const Guilds = () => {
       </div>
       <div className="mt-9">
         <h2 className="text-xl md:text-2xl font-semibold">All Guilds</h2>
-        <div className="w-full my-4 border border-[#dadada] rounded-lg py-2 overflow-x-auto">
+        <div className="w-full my-4 rounded-xl overflow-x-auto" style={{ backgroundColor: "var(--bg-card)" }}>
           <table className="min-w-full">
-            <thead className="border-b border-b-[#dadada]">
-              <tr>
-                <th className="pb-2 text-sm md:text-base lg:text-lg font-semibold">
-                  #
-                </th>
-                <th className="pb-2 text-sm md:text-base lg:text-lg font-semibold">
-                  Guild
-                </th>
-                <th className="pb-2 text-sm md:text-base lg:text-lg font-semibold">
-                  Entry Amount
-                </th>
-                <th className="pb-2 text-sm md:text-base lg:text-lg font-semibold">
-                  Members
-                </th>
-                <th className="pb-2 text-sm md:text-base lg:text-lg font-semibold">
-                  Volume
-                </th>
-                <th className="pb-2 text-sm md:text-base lg:text-lg font-semibold">
-                  Actions
-                </th>
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                {["#", "Guild", "Entry Amount", "Members", "Volume", "Actions"].map(h => (
+                  <th key={h} className="pb-3 pt-3 px-4 text-sm font-medium text-left" style={{ color: "var(--muted)" }}>{h}</th>
+                ))}
               </tr>
             </thead>
-            <tbody className="w-full text-center">
+            <tbody className="w-full">
               {guilds?.map((data, index) => (
                 <tr
                   key={data.guildId}
-                  className="w-full border-b border-b-[#dadada]"
+                  className="transition-colors cursor-default"
+                  style={{ borderBottom: "1px solid var(--border)" }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = "var(--bg-elevated)"}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
                 >
-                  <td className="py-2 text-sm md:text-base">{index + 1}</td>
-                  <td className="py-2 text-sm md:text-base">
+                  <td className="py-3 px-4 text-sm" style={{ color: "var(--muted)" }}>{index + 1}</td>
+                  <td className="py-3 px-4 text-sm font-semibold" style={{ color: "var(--text)" }}>
                     {data?.guild?.guildName || "Unknown Guild"}
                   </td>
-                  <td className="py-2 text-sm md:text-base font-semibold">
-                    <div className=" py-1">
-                      {data?.guild?.entryThreshold
-                        ? entryThresholdeth(data.guild.entryThreshold)
-                        : "0"}
-                      HYPE
-                    </div>
+                  <td className="py-3 px-4 text-sm font-semibold" style={{ color: "#4ade80" }}>
+                    {data?.guild?.entryThreshold ? entryThresholdeth(data.guild.entryThreshold) : "0"} HYPE
                   </td>
-                  <td className="py-2 text-sm md:text-base">
+                  <td className="py-3 px-4 text-sm" style={{ color: "var(--text)" }}>
                     {data?.guild?.memberNames?.length || 0}
                   </td>
-                  <td className="py-2 text-sm md:text-base">
+                  <td className="py-3 px-4 text-sm" style={{ color: "var(--text)" }}>
                     {data?.guild?.memberCap?.toString() || "0"}
                   </td>
-                  <td className="py-2 text-sm md:text-base px-1 font-semibold">
+                  <td className="py-3 px-4">
                     <button
-                      className="rounded-2xl cursor-pointer py-1 px-4 bg-white text-[#081423] border border-black hover:bg-transparent hover:text-white hover:border hover:border-white transition ease-in-out"
+                      className="rounded-full cursor-pointer py-1 px-4 text-sm font-semibold transition-all"
+                      style={{ backgroundColor: "var(--bg-elevated)", color: "var(--accent)", border: "1px solid var(--border)" }}
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = "var(--accent)"; e.currentTarget.style.color = "#fff"; }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = "var(--bg-elevated)"; e.currentTarget.style.color = "var(--accent)"; }}
                       onClick={() => navigate(`/guilds/${data.guildId}`)}
                     >
-                      view
+                      View
                     </button>
                   </td>
                 </tr>

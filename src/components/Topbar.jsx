@@ -1,13 +1,25 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useState, useEffect, useRef } from "react";
 import { IoClose, IoMenuOutline } from "react-icons/io5";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { AiFillProduct } from "react-icons/ai";
+import { FaChartLine, FaAward } from "react-icons/fa6";
+import { IoGiftSharp } from "react-icons/io5";
+import { PiSwapBold } from "react-icons/pi";
+
+const NAV = [
+  { to: "/guilds", label: "Guilds", icon: <AiFillProduct />, end: true },
+  { to: "/guilds/trade", label: "Trade", icon: <FaChartLine /> },
+  { to: "/guilds/reward", label: "Reward", icon: <IoGiftSharp /> },
+  { to: "/guilds/swap", label: "Swap", icon: <PiSwapBold /> },
+  { to: "/guilds/leaderboard", label: "Leaderboard", icon: <FaAward /> },
+];
 
 const Topbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
-  const { authenticated, login, logout } = usePrivy();
+  const { authenticated, login, logout, user } = usePrivy();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,91 +33,83 @@ const Topbar = () => {
   }, []);
 
   const handleLogout = async () => {
-    try {
-      await logout();
-      navigate("/");
-    } catch (err) {
-      console.error("Logout failed:", err);
-    }
+    try { await logout(); navigate("/"); } catch (err) { console.error(err); }
   };
+
+  const sliceAddress = (addr) => addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : null;
+
   return (
-    <div className={`w-full bg-white py-3 text-black transition-transform duration-300 ${visible ? "translate-y-0" : "-translate-y-full"}`}>
-      <div className="w-[96%] mx-auto flex items-center justify-between">
-        <Link to="/" className="block md:hidden">
-          <h2 className="text-xl  font-bold">HyperHaus</h2>
+    <div
+      className={`w-full py-3 transition-transform duration-300 ${visible ? "translate-y-0" : "-translate-y-full"}`}
+      style={{ backgroundColor: "var(--bg-card)", borderBottom: "1px solid var(--border)" }}
+    >
+      <div className="w-[96%] mx-auto flex items-center justify-between gap-6">
+
+        {/* Logo */}
+        <Link to="/" className="font-bold text-lg shrink-0" style={{ color: "var(--text)" }}>
+          HyperHaus
         </Link>
-        <div className="">
-          <div className="hidden md:block">
-            <input
-              type="search"
-              className="border border-black px-3 py-1 rounded-md outline-0"
-            />
-          </div>
+
+        {/* Desktop nav links */}
+        <div className="hidden md:flex items-center gap-1 flex-1">
+          {NAV.map(({ to, label, icon, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+              style={({ isActive }) => ({
+                backgroundColor: isActive ? "var(--bg-elevated)" : "transparent",
+                color: isActive ? "var(--text)" : "var(--muted)",
+                borderBottom: isActive ? "2px solid var(--accent)" : "2px solid transparent",
+              })}
+            >
+              {icon}
+              {label}
+            </NavLink>
+          ))}
         </div>
-        {/* <div className="">
-          <p className="">animating slide</p>
-        </div> */}
-        <div className="">
-          <div className="bg-black rounded-full h-5 w-5 hidden md:block"></div>
-          <div
-            className="block md:hidden text-black cursor-pointer"
-            onClick={() => setIsOpen(!isOpen)}
+
+        {/* Desktop right: wallet + auth */}
+        <div className="hidden md:flex items-center gap-3 shrink-0">
+          {authenticated && user?.wallet?.address && (
+            <span className="text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: "var(--bg-elevated)", color: "var(--muted)", border: "1px solid var(--border)" }}>
+              {sliceAddress(user.wallet.address)}
+            </span>
+          )}
+          <button
+            className="rounded-full px-4 py-1.5 text-sm font-semibold cursor-pointer text-white transition-all"
+            style={{ backgroundColor: "var(--accent)" }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = "var(--accent-hover)"}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = "var(--accent)"}
+            onClick={authenticated ? handleLogout : login}
           >
-            {isOpen ? (
-              <IoClose className="text-black w-7 h-7 font-semibold" />
-            ) : (
-              <IoMenuOutline className="text-black w-7 h-7 font-semibold" />
-            )}
-          </div>
+            {authenticated ? "Logout" : "Login"}
+          </button>
+        </div>
+
+        {/* Mobile hamburger */}
+        <div className="block md:hidden cursor-pointer" style={{ color: "var(--text)" }} onClick={() => setIsOpen(!isOpen)}>
+          {isOpen ? <IoClose className="w-6 h-6" /> : <IoMenuOutline className="w-6 h-6" />}
         </div>
       </div>
+
+      {/* Mobile menu */}
       {isOpen && (
-        <div className="absolute bg-black w-full h-[40vh] top-12.5 flex items-center py-4 text-white flex-col gap-y-6">
-          <Link
-            to="/"
-            className="text-lg font-semibold "
-            onClick={() => setIsOpen(!isOpen)}
+        <div className="absolute w-full top-[52px] flex flex-col items-center py-5 gap-y-3 z-50"
+          style={{ backgroundColor: "var(--bg-card)", borderBottom: "1px solid var(--border)" }}>
+          {NAV.map(({ to, label }) => (
+            <Link key={to} to={to} className="text-sm font-semibold py-1" style={{ color: "var(--text)" }} onClick={() => setIsOpen(false)}>
+              {label}
+            </Link>
+          ))}
+          <button
+            className="mt-2 w-[60%] rounded-full py-2 font-semibold text-white cursor-pointer"
+            style={{ backgroundColor: "var(--accent)" }}
+            onClick={authenticated ? handleLogout : login}
           >
-            Home
-          </Link>
-          <Link
-            to="/guilds"
-            className="text-lg font-semibold "
-            onClick={() => setIsOpen(!isOpen)}
-          >
-            Guilds
-          </Link>
-          <Link
-            to="/guilds/trade"
-            className="text-lg font-semibold "
-            onClick={() => setIsOpen(!isOpen)}
-          >
-            Trade
-          </Link>
-          <Link
-            to="/guilds/dashboard"
-            className="text-lg font-semibold "
-            onClick={() => setIsOpen(!isOpen)}
-          >
-            Dashboard
-          </Link>
-          <div className="w-full flex items-center justify-center">
-            {authenticated ? (
-              <button
-                className="w-[70%] mx-auto bg-white text-black rounded-2xl py-1.5 font-semibold"
-                onClick={handleLogout}
-              >
-                Logout
-              </button>
-            ) : (
-              <button
-                className="w-[70%] mx-auto bg-white text-black rounded-2xl py-1.5 font-semibold"
-                onClick={login}
-              >
-                Login/Sign-in
-              </button>
-            )}
-          </div>
+            {authenticated ? "Logout" : "Login / Sign Up"}
+          </button>
         </div>
       )}
     </div>

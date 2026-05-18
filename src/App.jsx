@@ -33,11 +33,14 @@ const routes = [
         children: [
           { index: true, element: <Guilds /> },
           { path: ":guildId", element: <GuildDetails /> },
-          { path: "trade", element: <Trade /> },
           { path: "reward", element: <Reward /> },
           { path: "swap", element: <Swap /> },
           { path: "leaderboard", element: <Leaderboard /> },
         ],
+      },
+      {
+        path: "/guilds/trade",
+        element: <Trade />,
       },
     ],
   },
