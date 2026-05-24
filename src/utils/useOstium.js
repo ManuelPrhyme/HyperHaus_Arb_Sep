@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
-import { createWalletClient, custom } from "viem";
 import { arbitrumSepolia } from "viem/chains";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -101,6 +100,7 @@ export function useOstium() {
         apiFetch(`/api/ostium/balances?user=${address}`),
       ]);
       setPositions(posRes.positions);
+      console.log("[positions] raw:", JSON.stringify(posRes.positions?.[0]));
       setOpenOrders(ordRes.orders);
       setFills(fillRes.fills);
       setBalances(balRes.balances);
@@ -156,23 +156,22 @@ export function useOstium() {
       }
     }
 
-    const walletClient = createWalletClient({ chain: arbitrumSepolia, transport: custom(provider) });
+    // Fetch latest block to get current base fee
+    const block = await provider.request({ method: "eth_getBlockByNumber", params: ["latest", false] });
+    const baseFee = BigInt(block.baseFeePerGas ?? "0x1312D00"); // ~20 gwei fallback
+    const maxPriorityFeePerGas = 1_000_000n; // 0.001 gwei
+    const maxFeePerGas = baseFee * 2n + maxPriorityFeePerGas;
 
-    // Fetch current base fee and add 1.5x buffer to avoid "fee cap below base fee" errors
-    const { createPublicClient: mkPublic, http } = await import("viem");
-    const pc = mkPublic({ chain: arbitrumSepolia, transport: http("https://sepolia-rollup.arbitrum.io/rpc") });
-    const block = await pc.getBlock({ blockTag: "latest" });
-    const baseFee = block.baseFeePerGas ?? 100_000_000n;
-    const maxFeePerGas         = baseFee * 15n / 10n;
-    const maxPriorityFeePerGas = 1_000_000n;
+    // Estimate gas — add 20% buffer
+    let gas = "0x7A120"; // 500k fallback
+    try {
+      const est = await provider.request({ method: "eth_estimateGas", params: [{ from: address, to, data }] });
+      gas = "0x" + (BigInt(est) * 12n / 10n).toString(16);
+    } catch { /* use fallback */ }
 
-    return walletClient.sendTransaction({
-      account: address,
-      to,
-      data,
-      value: 0n, // ERC20-collateral trades never require ETH value
-      maxFeePerGas,
-      maxPriorityFeePerGas,
+    return provider.request({
+      method: "eth_sendTransaction",
+      params: [{ from: address, to, data, gas, maxFeePerGas: "0x" + maxFeePerGas.toString(16), maxPriorityFeePerGas: "0x" + maxPriorityFeePerGas.toString(16) }],
     });
   }, [address, extensionWallet]);
 

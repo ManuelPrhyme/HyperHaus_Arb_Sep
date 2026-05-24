@@ -257,11 +257,7 @@ app.post("/api/ostium/build/open", async (req, res) => {
     });
 
     ok(res, {
-      tx: {
-        to:    tx.to,
-        data:  tx.data,
-        value: tx.value?.toString() ?? "0",
-      },
+      tx: { to: tx.to, data: tx.data },
       execPrice: String(execPrice),
     });
   } catch (e) { err(res, e); }
@@ -288,11 +284,7 @@ app.post("/api/ostium/build/close", async (req, res) => {
     });
 
     ok(res, {
-      tx: {
-        to:    tx.to,
-        data:  tx.data,
-        value: tx.value?.toString() ?? "0",
-      },
+      tx: { to: tx.to, data: tx.data },
       execPrice: String(midPx),
     });
   } catch (e) { err(res, e); }
