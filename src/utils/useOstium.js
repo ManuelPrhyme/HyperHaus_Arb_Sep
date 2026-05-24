@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { createWalletClient, custom } from "viem";
-import { arbitrum } from "viem/chains";
+import { arbitrumSepolia } from "viem/chains";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -25,6 +25,7 @@ export function useOstium() {
   const [openOrders, setOpenOrders] = useState([]);
   const [fills,      setFills]      = useState([]);
   const [orderbook,  setOrderbook]  = useState(null);
+  const [balances,   setBalances]   = useState(null); // { usdc, eth, allowance }
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState(null);
   const sseRef = useRef(null);
@@ -93,14 +94,16 @@ export function useOstium() {
   const refreshUserData = useCallback(async () => {
     if (!address) return;
     try {
-      const [posRes, ordRes, fillRes] = await Promise.all([
+      const [posRes, ordRes, fillRes, balRes] = await Promise.all([
         apiFetch(`/api/ostium/positions?user=${address}`),
         apiFetch(`/api/ostium/orders?user=${address}`),
         apiFetch(`/api/ostium/fills?user=${address}&limit=50`),
+        apiFetch(`/api/ostium/balances?user=${address}`),
       ]);
       setPositions(posRes.positions);
       setOpenOrders(ordRes.orders);
       setFills(fillRes.fills);
+      setBalances(balRes.balances);
     } catch (e) {
       console.error("Failed to fetch user data:", e);
     }
@@ -135,25 +138,25 @@ export function useOstium() {
 
     if (!provider) throw new Error("No Ethereum provider found");
 
-    // Switch to Arbitrum One
+    // Switch to Arbitrum Sepolia
     try {
-      await provider.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0xa4b1" }] });
+      await provider.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x66eee" }] });
     } catch (switchErr) {
       if (switchErr.code === 4902) {
         await provider.request({
           method: "wallet_addEthereumChain",
           params: [{
-            chainId:         "0xa4b1",
-            chainName:       "Arbitrum One",
+            chainId:         "0x66eee",
+            chainName:       "Arbitrum Sepolia",
             nativeCurrency:  { name: "Ether", symbol: "ETH", decimals: 18 },
-            rpcUrls:         ["https://arb1.arbitrum.io/rpc"],
-            blockExplorerUrls: ["https://arbiscan.io"],
+            rpcUrls:         ["https://sepolia-rollup.arbitrum.io/rpc"],
+            blockExplorerUrls: ["https://sepolia.arbiscan.io"],
           }],
         });
       }
     }
 
-    const walletClient = createWalletClient({ chain: arbitrum, transport: custom(provider) });
+    const walletClient = createWalletClient({ chain: arbitrumSepolia, transport: custom(provider) });
     return walletClient.sendTransaction({
       account: address,
       to,
@@ -161,6 +164,20 @@ export function useOstium() {
       value: BigInt(value ?? "0"),
     });
   }, [address, extensionWallet]);
+
+  // ── Approve USDC — server builds tx, client signs ────────────────────────────
+  const approveUsdc = useCallback(async (amount = "max") => {
+    if (!address) throw new Error("No wallet connected");
+    const { tx } = await apiFetch("/api/ostium/build/approve", {
+      method: "POST",
+      body:   JSON.stringify({ traderAddress: address, amount }),
+    });
+    const hash = await sendTx(tx);
+    // Refresh balances after approval
+    const balRes = await apiFetch(`/api/ostium/balances?user=${address}`);
+    setBalances(balRes.balances);
+    return hash;
+  }, [address, sendTx]);
 
   // ── Open trade — server builds tx, client signs ────────────────────────────
   const submitTrade = useCallback(async (params) => {
@@ -194,7 +211,7 @@ export function useOstium() {
 
   return {
     pairs, prices, positions, openOrders, fills,
-    orderbook, loading, error,
-    fetchOrderbook, submitTrade, closeTrade, refreshUserData,
+    orderbook, balances, loading, error,
+    fetchOrderbook, approveUsdc, submitTrade, closeTrade, refreshUserData,
   };
 }

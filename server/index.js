@@ -13,7 +13,7 @@ app.use(express.json());
 // ── Ostium client (singleton) ────────────────────────────────────────────────
 let ostium = null;
 async function getOstium() {
-  if (!ostium) ostium = await OstiumSubgraphClient.create();
+  if (!ostium) ostium = await OstiumSubgraphClient.create({ testnet: true });
   return ostium;
 }
 
@@ -163,10 +163,37 @@ app.get("/api/ostium/stream", async (req, res) => {
   });
 });
 
-// ════════════════════════════════════════════════════════════════════════════
-//  OSTIUM — BUILD TRANSACTION ENDPOINTS
-//  The server builds the unsigned tx; the client signs + submits via wallet
-// ════════════════════════════════════════════════════════════════════════════
+// GET /api/ostium/balances?user=0x...
+// Returns USDC balance, ETH balance and current USDC allowance
+app.get("/api/ostium/balances", async (req, res) => {
+  try {
+    const { user } = req.query;
+    if (!user) return res.status(400).json({ success: false, error: "user is required" });
+    const client   = await OstiumClient.createSelfAndSelf({ traderAddress: user, testnet: true });
+    const balances = await client.getBalances(user);
+    ok(res, { balances });
+  } catch (e) { err(res, e); }
+});
+
+// POST /api/ostium/build/approve
+// Builds an unsigned USDC approval tx for the TradingStorage contract
+// Body: { traderAddress, amount? }  — amount defaults to "max"
+app.post("/api/ostium/build/approve", async (req, res) => {
+  try {
+    const { traderAddress, amount = "max" } = req.body;
+    if (!traderAddress) return res.status(400).json({ success: false, error: "traderAddress required" });
+    const client = await OstiumClient.createSelfAndSelf({ traderAddress, testnet: true });
+    const tx     = client.getApproveUsdcTx(amount);
+    ok(res, {
+      tx: {
+        to:    tx.to,
+        data:  tx.data,
+        value: tx.value?.toString() ?? "0",
+      },
+    });
+  } catch (e) { err(res, e); }
+});
+
 
 // POST /api/ostium/build/open
 app.post("/api/ostium/build/open", async (req, res) => {
@@ -192,7 +219,7 @@ app.post("/api/ostium/build/open", async (req, res) => {
       if (!execPrice) return res.status(400).json({ success: false, error: "No price available" });
     }
 
-    const client = await OstiumClient.createSelfAndSelf({ traderAddress });
+    const client = await OstiumClient.createSelfAndSelf({ traderAddress, testnet: true });
     const tx = client.getOpenTradeTx({
       pairId,
       buy:        Boolean(buy),
@@ -226,7 +253,7 @@ app.post("/api/ostium/build/close", async (req, res) => {
     const midPx = prices[String(pairId)]?.mid;
     if (!midPx) return res.status(400).json({ success: false, error: "No price available for pair" });
 
-    const client = await OstiumClient.createSelfAndSelf({ traderAddress });
+    const client = await OstiumClient.createSelfAndSelf({ traderAddress, testnet: true });
     const tx = client.getCloseTradeTx({
       pairId,
       idx:            Number(idx),

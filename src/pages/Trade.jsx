@@ -20,8 +20,8 @@ const Trade = () => {
   const { authenticated, login } = usePrivy();
   const {
     pairs, prices, positions, openOrders, fills,
-    orderbook, loading, error,
-    fetchOrderbook, submitTrade, closeTrade,
+    orderbook, balances, loading, error,
+    fetchOrderbook, approveUsdc, submitTrade, closeTrade,
   } = useOstium();
 
   const [selectedPair, setSelectedPair] = useState(null);
@@ -34,8 +34,31 @@ const Trade = () => {
   const [stopLoss, setStopLoss] = useState("");
   const [bottomTab, setBottomTab] = useState("positions");
   const [submitting, setSubmitting] = useState(false);
+  const [approving,  setApproving]  = useState(false);
   const [txMsg, setTxMsg] = useState("");
   const [search, setSearch] = useState("");
+
+  // USDC allowance check — collateral in USD, allowance is a decimal string
+  const usdcAllowance  = parseFloat(balances?.allowance  || "0");
+  const usdcBalance    = parseFloat(balances?.usdc        || "0");
+  const needsApproval  = authenticated && collateral && parseFloat(collateral) >= 5 &&
+                         usdcAllowance < parseFloat(collateral);
+  const insufficientBalance = authenticated && collateral &&
+                              parseFloat(collateral) >= 5 &&
+                              usdcBalance < parseFloat(collateral);
+
+  const handleApprove = async () => {
+    setApproving(true);
+    setTxMsg("");
+    try {
+      await approveUsdc("max");
+      setTxMsg("✓ USDC approved — you can now place trades");
+    } catch (e) {
+      setTxMsg(`✗ Approval failed: ${e.message}`);
+    } finally {
+      setApproving(false);
+    }
+  };
 
   // Set default pair once pairs load
   useEffect(() => {
@@ -76,6 +99,8 @@ const Trade = () => {
 
   const canSubmit = authenticated && selectedPair && collateral &&
     parseFloat(collateral) >= 5 &&
+    !insufficientBalance &&
+    !needsApproval &&
     (orderType === OrderType.Market || limitPrice) &&
     !submitting;
 
@@ -476,6 +501,44 @@ const Trade = () => {
               </div>
             )}
 
+            {/* USDC balance + allowance */}
+            {authenticated && balances && (
+              <div className="mb-2 px-2 py-1.5 rounded text-xs space-y-0.5"
+                style={{ backgroundColor: bgElevated }}>
+                <div className="flex justify-between">
+                  <span style={{ color: muted }}>USDC Balance</span>
+                  <span style={{ color: usdcBalance >= 5 ? text : "#f87171" }}>
+                    ${parseFloat(balances.usdc).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: muted }}>Allowance</span>
+                  <span style={{ color: usdcAllowance > 0 ? "#4ade80" : "#f87171" }}>
+                    {usdcAllowance > 1e9 ? "Max" : `$${usdcAllowance.toFixed(2)}`}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Insufficient balance warning */}
+            {insufficientBalance && (
+              <div className="mb-2 text-xs text-center" style={{ color: "#f87171" }}>
+                Insufficient USDC balance
+              </div>
+            )}
+
+            {/* Approve USDC button — shown when allowance is too low */}
+            {needsApproval && !insufficientBalance && (
+              <button
+                onClick={handleApprove}
+                disabled={approving}
+                className="w-full py-2 rounded font-semibold cursor-pointer disabled:opacity-40 mb-2 transition-all"
+                style={{ backgroundColor: "var(--accent)", color: "#fff" }}
+              >
+                {approving ? "Approving USDC…" : "Approve USDC to Trade"}
+              </button>
+            )}
+
             {/* Submit */}
             <button
               onClick={handleSubmit}
@@ -487,6 +550,10 @@ const Trade = () => {
                 ? "Connect Wallet"
                 : !selectedPair
                 ? "Select a pair"
+                : insufficientBalance
+                ? "Insufficient USDC"
+                : needsApproval
+                ? "Approve USDC first"
                 : !collateral || parseFloat(collateral) < 5
                 ? "Enter collateral"
                 : orderType === OrderType.Limit && !limitPrice

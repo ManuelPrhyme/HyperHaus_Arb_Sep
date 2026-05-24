@@ -42,7 +42,7 @@ export const walletClient = async (wallet) => {
                 decimals: 18,
               },
               rpcUrls: [RPC_URL],
-              blockExplorerUrls: ["https://base-sepolia.blockscout.com/"],
+              blockExplorerUrls: ["https://sepolia.arbiscan.io/"],
             },
           ],
         });

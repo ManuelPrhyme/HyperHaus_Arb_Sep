@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { publicClient } from "../utils/viemClient";
 import { contractABI, contractAddress } from "../components/contractConfig";
 import { createWalletClient, custom } from "viem";
-import { baseSepolia } from "viem/chains";
+import { baseSepolia, arbitrumSepolia } from "viem/chains";
 import { entryThresholdeth } from "../utils/formatters";
 
 const initialState = {
@@ -103,7 +103,7 @@ function createSafeWalletClient() {
   }
 
   return createWalletClient({
-    chain: baseSepolia,
+    chain: arbitrumSepolia,
     transport: custom(window.ethereum),
   });
 }
