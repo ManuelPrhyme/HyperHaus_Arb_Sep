@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Chart, Topbar } from "../components";
 import { useOstium } from "../utils/useOstium";
-const OrderType = { Market: "market", Limit: "limit" };
 import { usePrivy } from "@privy-io/react-auth";
+
+const OrderType = { Market: "market", Limit: "limit" };
 
 const bg = "var(--bg)";
 const bgCard = "var(--bg-card)";
@@ -92,7 +93,7 @@ const Trade = () => {
         ? (side === "buy" ? livePrice?.ask : livePrice?.bid) || String(midPx)
         : limitPrice;
 
-      const hash = await submitTrade({
+      const { hash, execPrice } = await submitTrade({
         pairId: selectedPair.pairId,
         buy: side === "buy",
         price,
@@ -102,7 +103,7 @@ const Trade = () => {
         takeProfit: takeProfit || undefined,
         stopLoss: stopLoss || undefined,
       });
-      setTxMsg(`✓ Submitted: ${hash.slice(0, 10)}...`);
+      setTxMsg(`✓ Submitted: ${hash.slice(0, 10)}… exec @ $${parseFloat(execPrice).toFixed(2)}`);
       setCollateral("");
     } catch (e) {
       setTxMsg(`✗ ${e.message}`);
@@ -440,25 +441,25 @@ const Trade = () => {
               </div>
             </div>
 
-            {/* TP / SL */}
-            <div className="flex gap-1 mb-2">
-              <input
-                type="number"
-                placeholder="TP"
-                value={takeProfit}
-                onChange={(e) => setTakeProfit(e.target.value)}
-                className="flex-1 rounded px-2 py-1.5 outline-none text-xs"
-                style={{ backgroundColor: bgElevated, border: `1px solid ${border}`, color: "#4ade80" }}
-              />
-              <input
-                type="number"
-                placeholder="SL"
-                value={stopLoss}
-                onChange={(e) => setStopLoss(e.target.value)}
-                className="flex-1 rounded px-2 py-1.5 outline-none text-xs"
-                style={{ backgroundColor: bgElevated, border: `1px solid ${border}`, color: "#f87171" }}
-              />
-            </div>
+            {/* TP */}
+            <input
+              type="number"
+              placeholder="Take Profit"
+              value={takeProfit}
+              onChange={(e) => setTakeProfit(e.target.value)}
+              className="w-full rounded px-2 py-1.5 mb-2 outline-none text-xs"
+              style={{ backgroundColor: bgElevated, border: `1px solid ${border}`, color: "#4ade80" }}
+            />
+
+            {/* SL */}
+            <input
+              type="number"
+              placeholder="Stop Loss"
+              value={stopLoss}
+              onChange={(e) => setStopLoss(e.target.value)}
+              className="w-full rounded px-2 py-1.5 mb-2 outline-none text-xs"
+              style={{ backgroundColor: bgElevated, border: `1px solid ${border}`, color: "#f87171" }}
+            />
 
             {/* Notional + fee preview */}
             {collateral && parseFloat(collateral) >= 5 && (

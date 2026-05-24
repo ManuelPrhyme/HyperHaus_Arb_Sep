@@ -169,7 +169,6 @@ app.get("/api/ostium/stream", async (req, res) => {
 // ════════════════════════════════════════════════════════════════════════════
 
 // POST /api/ostium/build/open
-// Body: { traderAddress, pairId, buy, price, collateral, leverage, type, takeProfit?, stopLoss? }
 app.post("/api/ostium/build/open", async (req, res) => {
   try {
     const {
@@ -179,15 +178,28 @@ app.post("/api/ostium/build/open", async (req, res) => {
     } = req.body;
 
     if (!traderAddress) return res.status(400).json({ success: false, error: "traderAddress required" });
+    if (!pairId)        return res.status(400).json({ success: false, error: "pairId required" });
+    if (!collateral || parseFloat(collateral) < 5)
+      return res.status(400).json({ success: false, error: "collateral must be >= 5 USD" });
+
+    // Fetch live price from Ostium if not provided
+    let execPrice = price;
+    if (!execPrice) {
+      const subgraph = await getOstium();
+      const { prices } = await subgraph.getAllPrices();
+      const px = prices[String(pairId)];
+      execPrice = buy ? px?.ask : px?.bid;
+      if (!execPrice) return res.status(400).json({ success: false, error: "No price available" });
+    }
 
     const client = await OstiumClient.createSelfAndSelf({ traderAddress });
-    const tx     = client.getOpenTradeTx({
+    const tx = client.getOpenTradeTx({
       pairId,
-      buy,
-      price:      String(price),
+      buy:        Boolean(buy),
+      price:      String(execPrice),
       collateral: String(collateral),
-      leverage:   String(leverage),
-      type,
+      leverage:   String(leverage || "10"),
+      type:       type || "market",
       takeProfit: takeProfit ? String(takeProfit) : undefined,
       stopLoss:   stopLoss   ? String(stopLoss)   : undefined,
     });
@@ -198,29 +210,28 @@ app.post("/api/ostium/build/open", async (req, res) => {
         data:  tx.data,
         value: tx.value?.toString() ?? "0",
       },
+      execPrice: String(execPrice),
     });
   } catch (e) { err(res, e); }
 });
 
 // POST /api/ostium/build/close
-// Body: { traderAddress, pairId, idx, closePercent? }
 app.post("/api/ostium/build/close", async (req, res) => {
   try {
     const { traderAddress, pairId, idx, closePercent = 100 } = req.body;
     if (!traderAddress) return res.status(400).json({ success: false, error: "traderAddress required" });
 
-    // Fetch current mid price from Ostium
     const subgraph = await getOstium();
     const { prices } = await subgraph.getAllPrices();
     const midPx = prices[String(pairId)]?.mid;
     if (!midPx) return res.status(400).json({ success: false, error: "No price available for pair" });
 
     const client = await OstiumClient.createSelfAndSelf({ traderAddress });
-    const tx     = client.getCloseTradeTx({
+    const tx = client.getCloseTradeTx({
       pairId,
-      idx,
+      idx:            Number(idx),
       price:          String(midPx),
-      closePercent,
+      closePercent:   Number(closePercent),
       checkAllowance: false,
     });
 
@@ -230,6 +241,7 @@ app.post("/api/ostium/build/close", async (req, res) => {
         data:  tx.data,
         value: tx.value?.toString() ?? "0",
       },
+      execPrice: String(midPx),
     });
   } catch (e) { err(res, e); }
 });

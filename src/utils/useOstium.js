@@ -165,13 +165,19 @@ export function useOstium() {
   // ── Open trade — server builds tx, client signs ────────────────────────────
   const submitTrade = useCallback(async (params) => {
     if (!address) throw new Error("No wallet connected");
-    const { tx } = await apiFetch("/api/ostium/build/open", {
+    // Ensure type is a plain string ("market" or "limit") not an SDK enum
+    const payload = {
+      ...params,
+      type: String(params.type ?? "market"),
+      buy:  Boolean(params.buy),
+    };
+    const { tx, execPrice } = await apiFetch("/api/ostium/build/open", {
       method: "POST",
-      body:   JSON.stringify({ traderAddress: address, ...params }),
+      body:   JSON.stringify({ traderAddress: address, ...payload }),
     });
     const hash = await sendTx(tx);
     await refreshUserData();
-    return hash;
+    return { hash, execPrice };
   }, [address, sendTx, refreshUserData]);
 
   // ── Close trade — server builds tx, client signs ───────────────────────────
