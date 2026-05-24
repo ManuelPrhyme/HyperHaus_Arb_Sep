@@ -341,10 +341,18 @@ app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", services: ["bedrock", "ostium"] });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`HyperHaus server running on http://localhost:${PORT}`);
-  // Warm up Ostium client on start
   getOstium()
     .then(() => console.log("Ostium subgraph client ready"))
     .catch((e) => console.error("Ostium init failed:", e.message));
+});
+
+server.on("error", (e) => {
+  if (e.code === "EADDRINUSE") {
+    console.error(`Port ${PORT} in use — kill the existing process or set a different PORT in .env`);
+    process.exit(1);
+  } else {
+    throw e;
+  }
 });

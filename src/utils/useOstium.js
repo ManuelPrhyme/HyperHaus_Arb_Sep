@@ -170,7 +170,7 @@ export function useOstium() {
       account: address,
       to,
       data,
-      value: BigInt(value ?? "0"),
+      value: 0n, // ERC20-collateral trades never require ETH value
       maxFeePerGas,
       maxPriorityFeePerGas,
     });
