@@ -51,20 +51,9 @@ export default defineConfig({
 
   server: {
     proxy: {
-      // Proxy all REST calls
-      "/ostium-api": {
-        target: "https://builder.ostium.io",
+      "/api": {
+        target: "http://localhost:3001",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/ostium-api/, ""),
-        secure: true,
-      },
-      // Proxy WebSocket stream
-      "/ostium-ws": {
-        target: "wss://builder.ostium.io",
-        changeOrigin: true,
-        ws: true,
-        rewrite: (path) => path.replace(/^\/ostium-ws/, ""),
-        secure: true,
       },
     },
   },

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Chart, Topbar } from "../components";
 import { useOstium } from "../utils/useOstium";
-import { OrderType } from "@ostium/builder-sdk";
+const OrderType = { Market: "market", Limit: "limit" };
 import { usePrivy } from "@privy-io/react-auth";
 
 const bg = "var(--bg)";

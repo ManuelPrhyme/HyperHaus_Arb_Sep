@@ -30,10 +30,10 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0 auto;
 }
 
-.trade-fullscreen {
+/* Trade page escapes the 90% root constraint */
+body:has(.trade-fullscreen) #root {
   max-width: 100%;
-  width: 100vw;
-  margin-left: calc(-5vw);
+  margin: 0;
 }
 
 /* Scrollbar */
