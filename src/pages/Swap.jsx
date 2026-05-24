@@ -7,7 +7,7 @@ import { arbitrumSepolia } from "viem/chains";
 const WETH  = "0x980B62Da83eFf3D4576C647993b0c1D7faf17c73"; // WETH on Arb Sepolia
 const USDC  = "0xe73B11Fb1e3eeEe8AF2a23079A4410Fe1B370548"; // Ostium USDC on Arb Sepolia
 const ROUTER = "0x101F443B4d1b059569D643917553c771E1b9663E"; // Uniswap SwapRouter02 Arb Sepolia
-const QUOTER = "0x2779a0CC1c3e0E44D2542EC3e79e3864Ae93Ef0d"; // QuoterV2 Arb Sepolia
+const QUOTER = "0x2779a0CC1c3e0E44D2542EC3e79e3864Ae93Ef0B"; // QuoterV2 Arb Sepolia
 const FEE    = 3000; // 0.3% pool fee tier
 
 // ── ABIs (minimal) ────────────────────────────────────────────────────────────
