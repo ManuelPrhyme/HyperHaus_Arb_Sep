@@ -173,10 +173,19 @@ export default function Swap() {
       const provider = window.ethereum;
       await ensureChain(provider);
       const wc = createWalletClient({ chain: arbitrumSepolia, transport: custom(provider) });
+
+      // Fetch current base fee and add 20% buffer
+      const block = await publicClient.getBlock({ blockTag: "latest" });
+      const baseFee = block.baseFeePerGas ?? 100_000_000n;
+      const maxFeePerGas = baseFee * 15n / 10n; // 1.5x buffer
+      const maxPriorityFeePerGas = 1_000_000n;  // 0.001 gwei tip
+
       const hash = await wc.writeContract({
         account: address, address: USDC, abi: ERC20_ABI,
         functionName: "approve",
         args: [ROUTER, 2n ** 256n - 1n],
+        maxFeePerGas,
+        maxPriorityFeePerGas,
       });
       setStatus("Waiting for confirmation…");
       await publicClient.waitForTransactionReceipt({ hash });
@@ -197,6 +206,12 @@ export default function Swap() {
       const provider = window.ethereum;
       await ensureChain(provider);
       const wc = createWalletClient({ chain: arbitrumSepolia, transport: custom(provider) });
+
+      // Fetch current base fee and add buffer
+      const block = await publicClient.getBlock({ blockTag: "latest" });
+      const baseFee = block.baseFeePerGas ?? 100_000_000n;
+      const maxFeePerGas = baseFee * 15n / 10n;
+      const maxPriorityFeePerGas = 1_000_000n;
 
       const isEthIn      = fromToken === "ETH";
       const amountIn     = isEthIn ? parseEther(amount) : parseUnits(amount, 6);
@@ -220,6 +235,8 @@ export default function Swap() {
           sqrtPriceLimitX96: 0n,
         }],
         value: isEthIn ? amountIn : 0n,
+        maxFeePerGas,
+        maxPriorityFeePerGas,
       });
 
       setStatus("Waiting for confirmation…");

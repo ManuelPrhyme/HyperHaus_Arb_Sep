@@ -157,11 +157,22 @@ export function useOstium() {
     }
 
     const walletClient = createWalletClient({ chain: arbitrumSepolia, transport: custom(provider) });
+
+    // Fetch current base fee and add 1.5x buffer to avoid "fee cap below base fee" errors
+    const { createPublicClient: mkPublic, http } = await import("viem");
+    const pc = mkPublic({ chain: arbitrumSepolia, transport: http("https://sepolia-rollup.arbitrum.io/rpc") });
+    const block = await pc.getBlock({ blockTag: "latest" });
+    const baseFee = block.baseFeePerGas ?? 100_000_000n;
+    const maxFeePerGas         = baseFee * 15n / 10n;
+    const maxPriorityFeePerGas = 1_000_000n;
+
     return walletClient.sendTransaction({
       account: address,
       to,
       data,
       value: BigInt(value ?? "0"),
+      maxFeePerGas,
+      maxPriorityFeePerGas,
     });
   }, [address, extensionWallet]);
 
