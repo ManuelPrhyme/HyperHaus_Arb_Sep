@@ -169,28 +169,53 @@ app.get("/api/ostium/balances", async (req, res) => {
   try {
     const { user } = req.query;
     if (!user) return res.status(400).json({ success: false, error: "user is required" });
+    // Use Circle USDC (0x75faf114...) — the token Ostium testnet accepts
     const client   = await OstiumClient.createSelfAndSelf({ traderAddress: user, testnet: true });
-    const balances = await client.getBalances(user);
-    ok(res, { balances });
+    const raw      = await client.getBalances(user);
+    // Override usdc field with Circle USDC balance read directly
+    const { createPublicClient, http, formatUnits } = await import("viem");
+    const { arbitrumSepolia } = await import("viem/chains");
+    const CIRCLE_USDC = "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d";
+    const TRADING_STORAGE = "0x0b9f5243b29938668c9cfbd7557a389ec7ef88b8";
+    const ERC20_ABI = [
+      { name: "balanceOf", type: "function", stateMutability: "view",
+        inputs: [{ name: "account", type: "address" }], outputs: [{ name: "", type: "uint256" }] },
+      { name: "allowance", type: "function", stateMutability: "view",
+        inputs: [{ name: "owner", type: "address" }, { name: "spender", type: "address" }],
+        outputs: [{ name: "", type: "uint256" }] },
+    ];
+    const pc = createPublicClient({ chain: arbitrumSepolia, transport: http("https://sepolia-rollup.arbitrum.io/rpc") });
+    const [usdcRaw, allowanceRaw] = await Promise.all([
+      pc.readContract({ address: CIRCLE_USDC, abi: ERC20_ABI, functionName: "balanceOf", args: [user] }),
+      pc.readContract({ address: CIRCLE_USDC, abi: ERC20_ABI, functionName: "allowance", args: [user, TRADING_STORAGE] }),
+    ]);
+    ok(res, { balances: {
+      usdc:      formatUnits(usdcRaw, 6),
+      eth:       raw.eth,
+      allowance: formatUnits(allowanceRaw, 6),
+    }});
   } catch (e) { err(res, e); }
 });
 
 // POST /api/ostium/build/approve
 // Builds an unsigned USDC approval tx for the TradingStorage contract
-// Body: { traderAddress, amount? }  — amount defaults to "max"
 app.post("/api/ostium/build/approve", async (req, res) => {
   try {
     const { traderAddress, amount = "max" } = req.body;
     if (!traderAddress) return res.status(400).json({ success: false, error: "traderAddress required" });
-    const client = await OstiumClient.createSelfAndSelf({ traderAddress, testnet: true });
-    const tx     = client.getApproveUsdcTx(amount);
-    ok(res, {
-      tx: {
-        to:    tx.to,
-        data:  tx.data,
-        value: tx.value?.toString() ?? "0",
-      },
+    // Build approve tx for Circle USDC directly
+    const { encodeFunctionData, parseUnits, maxUint256 } = await import("viem");
+    const CIRCLE_USDC    = "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d";
+    const TRADING_STORAGE = "0x0b9f5243b29938668c9cfbd7557a389ec7ef88b8";
+    const approveAmount  = amount === "max" ? maxUint256 : parseUnits(String(amount), 6);
+    const data = encodeFunctionData({
+      abi: [{ name: "approve", type: "function", stateMutability: "nonpayable",
+        inputs: [{ name: "spender", type: "address" }, { name: "amount", type: "uint256" }],
+        outputs: [{ name: "", type: "bool" }] }],
+      functionName: "approve",
+      args: [TRADING_STORAGE, approveAmount],
     });
+    ok(res, { tx: { to: CIRCLE_USDC, data, value: "0" } });
   } catch (e) { err(res, e); }
 });
 

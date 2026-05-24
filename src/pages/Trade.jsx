@@ -1,7 +1,21 @@
 import { useState, useEffect } from "react";
 import { Chart, Topbar } from "../components";
 import { useOstium } from "../utils/useOstium";
-import { usePrivy } from "@privy-io/react-auth";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { createPublicClient, http, formatUnits } from "viem";
+import { arbitrumSepolia } from "viem/chains";
+
+// Circle USDC on Arbitrum Sepolia
+const CIRCLE_USDC = "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d";
+const BALANCE_ABI = [{
+  name: "balanceOf", type: "function", stateMutability: "view",
+  inputs: [{ name: "account", type: "address" }],
+  outputs: [{ name: "", type: "uint256" }],
+}];
+const publicClient = createPublicClient({
+  chain: arbitrumSepolia,
+  transport: http("https://sepolia-rollup.arbitrum.io/rpc"),
+});
 
 const OrderType = { Market: "market", Limit: "limit" };
 
@@ -24,6 +38,12 @@ const Trade = () => {
     fetchOrderbook, approveUsdc, submitTrade, closeTrade,
   } = useOstium();
 
+  // Derive address from useOstium's extensionWallet logic
+  const { wallets } = useWallets();
+  const address = (wallets.find(
+    (w) => ["metamask","injected","rabby","coinbase_wallet"].includes(w.walletClientType)
+  ) || wallets[0])?.address;
+
   const [selectedPair, setSelectedPair] = useState(null);
   const [orderType, setOrderType] = useState(OrderType.Market);
   const [side, setSide] = useState("buy");
@@ -37,10 +57,28 @@ const Trade = () => {
   const [approving,  setApproving]  = useState(false);
   const [txMsg, setTxMsg] = useState("");
   const [search, setSearch] = useState("");
+  const [circleUsdc, setCircleUsdc] = useState(null);
 
-  // USDC allowance check — collateral in USD, allowance is a decimal string
+  // Fetch Circle USDC balance directly from chain
+  useEffect(() => {
+    if (!authenticated || !address) return;
+    const fetch = async () => {
+      try {
+        const raw = await publicClient.readContract({
+          address: CIRCLE_USDC, abi: BALANCE_ABI,
+          functionName: "balanceOf", args: [address],
+        });
+        setCircleUsdc(parseFloat(formatUnits(raw, 6)).toFixed(2));
+      } catch (e) { console.error("Circle USDC fetch failed:", e); }
+    };
+    fetch();
+    const interval = setInterval(fetch, 15000);
+    return () => clearInterval(interval);
+  }, [authenticated, address]);
+
+  // USDC allowance check — use Circle USDC balance, allowance from server
   const usdcAllowance  = parseFloat(balances?.allowance  || "0");
-  const usdcBalance    = parseFloat(balances?.usdc        || "0");
+  const usdcBalance    = circleUsdc !== null ? parseFloat(circleUsdc) : 0;
   const needsApproval  = authenticated && collateral && parseFloat(collateral) >= 5 &&
                          usdcAllowance < parseFloat(collateral);
   const insufficientBalance = authenticated && collateral &&
@@ -502,19 +540,19 @@ const Trade = () => {
             )}
 
             {/* USDC balance + allowance */}
-            {authenticated && balances && (
+            {authenticated && (
               <div className="mb-2 px-2 py-1.5 rounded text-xs space-y-0.5"
                 style={{ backgroundColor: bgElevated }}>
                 <div className="flex justify-between">
                   <span style={{ color: muted }}>USDC Balance</span>
-                  <span style={{ color: usdcBalance >= 5 ? text : "#f87171" }}>
-                    ${parseFloat(balances.usdc).toFixed(2)}
+                  <span style={{ color: circleUsdc && parseFloat(circleUsdc) >= 5 ? "#4ade80" : text }}>
+                    {circleUsdc !== null ? `$${circleUsdc}` : "—"}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span style={{ color: muted }}>Allowance</span>
                   <span style={{ color: usdcAllowance > 0 ? "#4ade80" : "#f87171" }}>
-                    {usdcAllowance > 1e9 ? "Max" : `$${usdcAllowance.toFixed(2)}`}
+                    {balances ? (usdcAllowance > 1e9 ? "Max ✓" : `$${usdcAllowance.toFixed(2)}`) : "—"}
                   </span>
                 </div>
               </div>
