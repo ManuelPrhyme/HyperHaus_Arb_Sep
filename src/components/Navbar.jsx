@@ -19,13 +19,10 @@ const Navbar = () => {
 
   return (
     <div
-      className="fixed z-50 flex items-center w-full py-3 border-b md:py-4"
+    className="fixed top-0 left-0 z-50 w-full py-3 border-b md:py-4"
       style={{ backgroundColor: "var(--bg)", borderColor: "var(--border)" }}
     >
-      <div
-        className="w-[95%] mx-auto bg-red-900 flex items-center justify-between"
-        style={{ marginRight: "8%" }}
-      >
+      <div className="w-[95%] mx-auto flex items-center justify-between">
         <Link
           to="/"
           className="text-xl font-bold md:text-2xl"

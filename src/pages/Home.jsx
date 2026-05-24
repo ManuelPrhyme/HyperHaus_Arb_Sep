@@ -34,7 +34,7 @@ const Home = () => {
     <div className="w-full">
 
       {/* Hero */}
-      <div className="w-[96%] md:w-[94%] h-full md:h-[80vh] mx-auto pt-0 md:pt-10 flex items-start justify-between flex-col md:flex-row gap-14">
+      <div className="w-[96%] md:w-[95%] h-full md:h-[80vh] mx-auto pt-0 md:pt-10 flex items-start justify-between flex-col md:flex-row gap-14">
         <div className="w-full md:w-[50%]">
           <h1 className="text-3xl md:text-4xl lg:text-5xl leading-9 md:leading-14 lg:leading-16 font-bold" style={{ color: "var(--text)" }}>
             HyperSocial Trading Guilds
