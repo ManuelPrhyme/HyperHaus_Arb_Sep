@@ -13,6 +13,7 @@ It connects capital holders with skilled traders, enabling anyone to participate
 - Trade Proposals: Members propose trades; guilds vote to approve or reject.
 - Consensus Voting: Majority rules for larger guilds, unanimous approval for small guilds.
 - Capital Deployment: Approved proposals release funds to the proposer (trader).
+- **Agentic Trading:** Once a proposal is approved, the trader gains agentic trading capability — autonomous execution rights within defined parameters, ensuring trades are carried out efficiently without requiring further manual intervention.
 - Profit/Loss Sharing: Margins are distributed fairly between traders, members, and vesting contracts.
 - Vesting: Ensures long‑term alignment by locking part of profits into schedules claimable over time.
 
@@ -35,7 +36,7 @@ When a trade closes, the margin (profit or loss) is handled as follows:
 
 ## End‑to‑End Flow
 
-[Create Guild] → [Join Guild] → [Propose Trade] → [Vote] → [Execute Trade]
+[Create Guild] → [Join Guild] → [Propose Trade] → [Vote] → [Agentic Execution]  
 → [Return Funds] → [Distribute Margin] → [Vesting Contract]
 
 ## Contracts
@@ -43,6 +44,7 @@ When a trade closes, the margin (profit or loss) is handled as follows:
 ### HyperHaus (Core)
 
 - Guild creation, membership, proposals, voting, trade execution
+- Agentic trading capability for approved proposals
 - Profit/loss distribution logic
 - Interfaces with Vesting contract for long‑term rewards
 
@@ -59,6 +61,7 @@ When a trade closes, the margin (profit or loss) is handled as follows:
 - Testing & Deployment: Amazon Q Developer, Kiro IDE, Foundry
 - Consensus & Governance: DAO‑style voting logic
 - Capital Pooling: Native token contributions tracked per guild
+- Agentic Trading: Autonomous execution rights for approved proposals
 - Vesting: Custom schedules per member stake
 
 ### Frontend Tech Stack
@@ -67,4 +70,3 @@ When a trade closes, the margin (profit or loss) is handled as follows:
 - Redux: for state management
 - Privy: for wallet connector
 - Tailwindcss: for styling
-
